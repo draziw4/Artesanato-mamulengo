@@ -1,0 +1,9 @@
+node_modules/
+dist/
+__pycache__/
+.venv/
+.DS_Store
+backend/casa_mamulengo.db
+backend/.env
+backend/uploads/*
+!backend/uploads/.gitkeep
