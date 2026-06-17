@@ -3,12 +3,13 @@
 ## Obrigatório antes de vender
 
 - Trocar o e-mail e a senha inicial do administrador e ativar 2FA.
-- Configurar domínio, HTTPS, `COOKIE_SECURE=true` e `ALLOWED_ORIGINS`.
+- Configurar HTTPS, `COOKIE_SECURE=true`, `REQUIRE_ADMIN_2FA=true` e `ALLOWED_ORIGINS`.
+- Quando comprar domínio, trocar URLs gratuitas por domínio próprio no Render, Vercel e Mercado Pago.
 - Configurar e homologar Mercado Pago e a assinatura do webhook.
 - Substituir o cálculo demonstrativo de frete por uma transportadora ou serviço real.
 - Configurar o número real do WhatsApp, endereço e horários de retirada no CMS.
 - Publicar política de privacidade, termos de compra, trocas, devoluções e prazos.
-- Configurar e-mails transacionais para pedido, pagamento, envio e cancelamento.
+- Configurar e-mails transacionais por SMTP para pedido e atualização de status.
 
 ## Infraestrutura e segurança
 

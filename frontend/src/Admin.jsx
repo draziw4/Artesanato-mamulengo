@@ -293,9 +293,7 @@ function SecurityPanel({ user, users, auditLogs, onReload }) {
     role: "editor",
   });
   const setup2fa = async () =>
-    setSetup(
-      await (await request("/auth/2fa/setup", { method: "POST" })).json(),
-    );
+    setSetup(await (await request("/auth/2fa/setup", { method: "POST" })).json());
   const enable2fa = async () => {
     const response = await request("/auth/2fa/enable", {
       method: "POST",
@@ -694,6 +692,7 @@ function AdminPanel({ user, onLogout }) {
   const [message, setMessage] = useState("");
 
   const load = async () => {
+    if (user.two_factor_required && !user.two_factor_enabled) return;
     const calls = [
       request("/admin/products"),
       request("/categories"),
@@ -709,6 +708,11 @@ function AdminPanel({ user, onLogout }) {
     const responses = await Promise.all(calls);
     if (responses.some((response) => response.status === 401))
       return onLogout();
+    if (responses.some((response) => response.status === 403)) {
+      setTab("security");
+      setMessage("Ative o 2FA antes de administrar a loja.");
+      return;
+    }
     const [
       productsResponse,
       categoriesResponse,
@@ -825,42 +829,46 @@ function AdminPanel({ user, onLogout }) {
           </p>
         </div>
         <nav>
-          <button
-            className={tab === "content" ? "active" : ""}
-            onClick={() => setTab("content")}
-          >
-            Conteúdo <span>CMS</span>
-          </button>
-          <button
-            className={tab === "products" ? "active" : ""}
-            onClick={() => setTab("products")}
-          >
-            Peças <span>{products.length}</span>
-          </button>
-          <button
-            className={tab === "categories" ? "active" : ""}
-            onClick={() => setTab("categories")}
-          >
-            Categorias <span>{categories.length}</span>
-          </button>
-          <button
-            className={tab === "collections" ? "active" : ""}
-            onClick={() => setTab("collections")}
-          >
-            Coleções <span>{collections.length}</span>
-          </button>
-          <button
-            className={tab === "media" ? "active" : ""}
-            onClick={() => setTab("media")}
-          >
-            Mídia <span>{media.length}</span>
-          </button>
-          <button
-            className={tab === "orders" ? "active" : ""}
-            onClick={() => setTab("orders")}
-          >
-            Pedidos <span>{orders.length}</span>
-          </button>
+          {!(user.two_factor_required && !user.two_factor_enabled) && (
+            <>
+              <button
+                className={tab === "content" ? "active" : ""}
+                onClick={() => setTab("content")}
+              >
+                Conteúdo <span>CMS</span>
+              </button>
+              <button
+                className={tab === "products" ? "active" : ""}
+                onClick={() => setTab("products")}
+              >
+                Peças <span>{products.length}</span>
+              </button>
+              <button
+                className={tab === "categories" ? "active" : ""}
+                onClick={() => setTab("categories")}
+              >
+                Categorias <span>{categories.length}</span>
+              </button>
+              <button
+                className={tab === "collections" ? "active" : ""}
+                onClick={() => setTab("collections")}
+              >
+                Coleções <span>{collections.length}</span>
+              </button>
+              <button
+                className={tab === "media" ? "active" : ""}
+                onClick={() => setTab("media")}
+              >
+                Mídia <span>{media.length}</span>
+              </button>
+              <button
+                className={tab === "orders" ? "active" : ""}
+                onClick={() => setTab("orders")}
+              >
+                Pedidos <span>{orders.length}</span>
+              </button>
+            </>
+          )}
           <button
             className={tab === "security" ? "active" : ""}
             onClick={() => setTab("security")}
@@ -874,6 +882,13 @@ function AdminPanel({ user, onLogout }) {
         </div>
       </aside>
       <main className="admin-main">
+        {message && <div className="admin-alert">{message}</div>}
+        {user.two_factor_required && !user.two_factor_enabled && (
+          <div className="admin-alert error">
+            O 2FA é obrigatório antes de editar produtos, pedidos ou conteúdo.
+            Configure abaixo usando um aplicativo autenticador.
+          </div>
+        )}
         {tab === "content" && content && (
           <ContentEditor
             content={content}
@@ -1067,9 +1082,13 @@ function AdminPanel({ user, onLogout }) {
                             </option>
                             <option value="confirmed">Confirmado</option>
                             <option value="preparing">Em preparação</option>
+                            <option value="ready_for_pickup">
+                              Pronto para retirada
+                            </option>
                             <option value="shipped">Enviado</option>
                             <option value="completed">Concluído</option>
                             <option value="cancelled">Cancelado</option>
+                            <option value="refunded">Reembolsado</option>
                           </select>
                         </td>
                       </tr>

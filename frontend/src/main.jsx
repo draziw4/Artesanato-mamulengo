@@ -1133,6 +1133,9 @@ function App() {
         </div>
         <small>
           © 2026 Casa Mamulengo · Feito com tempo no Brasil. ·{" "}
+          <a href="/politica-de-privacidade">Privacidade</a> ·{" "}
+          <a href="/termos-de-compra">Termos</a> ·{" "}
+          <a href="/trocas-e-devolucoes">Trocas e devoluções</a> ·{" "}
           <a href="/admin">Administrar</a>
         </small>
       </footer>
@@ -1226,6 +1229,133 @@ function App() {
   );
 }
 
+const legalPages = {
+  "/politica-de-privacidade": {
+    title: "Política de Privacidade",
+    eyebrow: "LGPD e dados pessoais",
+    sections: [
+      [
+        "Quais dados coletamos",
+        "Coletamos apenas os dados necessários para operar a loja: nome, e-mail, telefone, endereço de entrega ou retirada, itens do pedido e informações de pagamento retornadas pelo provedor.",
+      ],
+      [
+        "Como usamos os dados",
+        "Usamos essas informações para processar pedidos, calcular entrega, prestar atendimento, enviar confirmações e cumprir obrigações legais.",
+      ],
+      [
+        "Pagamentos",
+        "Os dados sensíveis de cartão são tratados diretamente pelo provedor de pagamento. A loja não armazena número de cartão, código de segurança ou senha bancária.",
+      ],
+      [
+        "Direitos do cliente",
+        "O cliente pode solicitar acesso, correção ou exclusão dos seus dados pelos canais de atendimento da loja, respeitando prazos legais e obrigações fiscais.",
+      ],
+    ],
+  },
+  "/termos-de-compra": {
+    title: "Termos de Compra",
+    eyebrow: "Condições comerciais",
+    sections: [
+      [
+        "Produtos artesanais",
+        "As peças são feitas ou finalizadas manualmente. Pequenas variações de cor, textura, veio da madeira e acabamento fazem parte da natureza artesanal do produto.",
+      ],
+      [
+        "Pagamento",
+        "O pedido é confirmado após aprovação do pagamento pelo provedor escolhido. Pedidos pendentes podem ser cancelados caso o pagamento não seja concluído.",
+      ],
+      [
+        "Estoque",
+        "Peças únicas dependem de disponibilidade. Em caso de divergência de estoque, a loja entrará em contato para troca, encomenda ou reembolso.",
+      ],
+      [
+        "Retirada local",
+        "Quando disponível, a retirada é combinada após a confirmação do pedido e deve respeitar os horários de atendimento informados pela loja.",
+      ],
+    ],
+  },
+  "/trocas-e-devolucoes": {
+    title: "Trocas e Devoluções",
+    eyebrow: "Pós-venda",
+    sections: [
+      [
+        "Arrependimento",
+        "Compras online podem seguir o prazo legal de arrependimento previsto para comércio eletrônico. O produto deve retornar sem sinais de uso indevido.",
+      ],
+      [
+        "Avaria no transporte",
+        "Se a peça chegar danificada, entre em contato com fotos da embalagem e do produto para avaliação e solução.",
+      ],
+      [
+        "Peças sob encomenda",
+        "Produtos personalizados ou sob encomenda podem ter regras específicas, informadas antes da confirmação da compra.",
+      ],
+      [
+        "Contato",
+        "Para solicitar troca, devolução ou suporte, use o WhatsApp ou e-mail informado na loja, mencionando o código do pedido.",
+      ],
+    ],
+  },
+  "/politica-de-entrega": {
+    title: "Política de Entrega",
+    eyebrow: "Envio e retirada",
+    sections: [
+      [
+        "Prazos",
+        "Os prazos de entrega começam a contar após a confirmação do pagamento e podem variar conforme região, transportadora e tipo de peça.",
+      ],
+      [
+        "Embalagem",
+        "As peças são embaladas com proteção adequada para madeira artesanal, reduzindo risco de impacto durante o transporte.",
+      ],
+      [
+        "Retirada",
+        "Clientes próximos podem escolher retirada local quando essa opção estiver disponível no checkout.",
+      ],
+    ],
+  },
+};
+
+function LegalPage({ page }) {
+  useEffect(() => {
+    document.title = `${page.title} | Casa Mamulengo`;
+  }, [page.title]);
+  return (
+    <div className="legal-page">
+      <header className="checkout-top">
+        <a className="brand small" href="/">
+          <span>Casa</span>
+          <strong>Mamulengo</strong>
+        </a>
+        <a className="text-link" href="/">
+          Voltar para a loja <Icon name="arrow" />
+        </a>
+      </header>
+      <main className="legal-content">
+        <span className="eyebrow">{page.eyebrow}</span>
+        <h1>{page.title}</h1>
+        <p>
+          Este texto é uma base operacional para a loja. Antes de uma operação
+          comercial maior, revise com contador ou assessoria jurídica.
+        </p>
+        {page.sections.map(([title, text]) => (
+          <section key={title}>
+            <h2>{title}</h2>
+            <p>{text}</p>
+          </section>
+        ))}
+      </main>
+    </div>
+  );
+}
+
+function Root() {
+  const path = window.location.pathname;
+  if (path.startsWith("/admin")) return <Admin />;
+  if (legalPages[path]) return <LegalPage page={legalPages[path]} />;
+  return <App />;
+}
+
 createRoot(document.getElementById("root")).render(
-  window.location.pathname.startsWith("/admin") ? <Admin /> : <App />,
+  <Root />,
 );

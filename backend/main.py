@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 
-from fastapi import Cookie, Depends, FastAPI, File, Header, HTTPException, Query, Request, Response, UploadFile
+from fastapi import BackgroundTasks, Cookie, Depends, FastAPI, File, Header, HTTPException, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, model_validator
@@ -20,6 +20,7 @@ import pyotp
 
 from cms import audit, get_or_create_site_content, revision
 from database import BASE_DIR, get_db
+from emails import notify_order_created, notify_order_status_changed
 from media import process_image
 from models import (
     AuditLog,
@@ -57,6 +58,7 @@ ALLOWED_ORIGINS = {
 LOGIN_ATTEMPTS = defaultdict(deque)
 LOGIN_WINDOW_SECONDS = 15 * 60
 LOGIN_MAX_ATTEMPTS = 5
+REQUIRE_ADMIN_2FA = os.getenv("REQUIRE_ADMIN_2FA", "false").lower() == "true"
 
 app = FastAPI(title="Casa Mamulengo API", version="3.0.0")
 app.add_middleware(
@@ -177,7 +179,15 @@ class OrderRequest(BaseModel):
 
 
 class OrderStatusRequest(BaseModel):
-    status: Literal["confirmed", "preparing", "shipped", "completed", "cancelled"]
+    status: Literal[
+        "confirmed",
+        "preparing",
+        "ready_for_pickup",
+        "shipped",
+        "completed",
+        "cancelled",
+        "refunded",
+    ]
 
 
 def validate_admin_origin(request: Request):
@@ -186,27 +196,37 @@ def validate_admin_origin(request: Request):
         raise HTTPException(status_code=403, detail="Origem da requisição não autorizada")
 
 
-def require_admin(
+def require_authenticated_user(
     request: Request,
     session: str | None = Cookie(default=None),
     database: Session = Depends(get_db),
 ) -> User:
     validate_admin_origin(request)
     user = get_session_user(database, session)
+    if not user:
+        raise HTTPException(status_code=401, detail="Sessão administrativa inválida")
+    return user
+
+
+def require_admin(
+    request: Request,
+    user: User = Depends(require_authenticated_user),
+) -> User:
     if not user or user.role != "admin":
         raise HTTPException(status_code=401, detail="Acesso administrativo necessário")
+    if REQUIRE_ADMIN_2FA and not user.two_factor_enabled:
+        raise HTTPException(status_code=403, detail="Ative o 2FA antes de administrar a loja")
     return user
 
 
 def require_staff(
     request: Request,
-    session: str | None = Cookie(default=None),
-    database: Session = Depends(get_db),
+    user: User = Depends(require_authenticated_user),
 ) -> User:
-    validate_admin_origin(request)
-    user = get_session_user(database, session)
     if not user or user.role not in {"admin", "editor"}:
         raise HTTPException(status_code=401, detail="Acesso ao painel necessário")
+    if REQUIRE_ADMIN_2FA and not user.two_factor_enabled:
+        raise HTTPException(status_code=403, detail="Ative o 2FA antes de administrar a loja")
     return user
 
 
@@ -217,6 +237,7 @@ def serialize_user(user: User):
         "email": user.email,
         "role": user.role,
         "two_factor_enabled": user.two_factor_enabled,
+        "two_factor_required": REQUIRE_ADMIN_2FA,
     }
 
 
@@ -328,17 +349,40 @@ def serialize_order(order: Order, include_private=False):
     return result
 
 
+def order_notification_payload(order: Order):
+    return {
+        "code": order.code,
+        "customer_name": order.customer_name,
+        "customer_email": order.customer_email,
+        "customer_phone": order.customer_phone,
+        "shipping_service": order.shipping_service,
+        "status": order.status,
+        "total": float(order.total),
+    }
+
+
 def validate_production_config():
     if os.getenv("APP_ENV", "development").lower() != "production":
         return
-    required = ["DATABASE_URL", "ADMIN_EMAIL", "ADMIN_PASSWORD", "MERCADO_PAGO_ACCESS_TOKEN"]
+    required = [
+        "DATABASE_URL",
+        "ADMIN_EMAIL",
+        "ADMIN_PASSWORD",
+        "MERCADO_PAGO_ACCESS_TOKEN",
+        "MERCADO_PAGO_WEBHOOK_SECRET",
+        "FRONTEND_PUBLIC_URL",
+        "API_PUBLIC_URL",
+        "ALLOWED_ORIGINS",
+    ]
     missing = [name for name in required if not os.getenv(name)]
     if missing:
         raise RuntimeError(f"Variáveis obrigatórias ausentes em produção: {', '.join(missing)}")
-    if os.getenv("ADMIN_PASSWORD") == "Mamulengo@2026":
+    if os.getenv("ADMIN_PASSWORD") in {"Mamulengo@2026", "TroqueEstaSenha@2026"}:
         raise RuntimeError("A senha administrativa padrão não pode ser usada em produção")
     if os.getenv("COOKIE_SECURE", "false").lower() != "true":
         raise RuntimeError("COOKIE_SECURE deve ser true em produção")
+    if os.getenv("REQUIRE_ADMIN_2FA", "false").lower() != "true":
+        raise RuntimeError("REQUIRE_ADMIN_2FA deve ser true em produção")
     if any("localhost" in origin or "127.0.0.1" in origin for origin in ALLOWED_ORIGINS):
         raise RuntimeError("ALLOWED_ORIGINS deve conter apenas os domínios públicos em produção")
 
@@ -401,7 +445,7 @@ def login(
 
 
 @app.get("/api/auth/me")
-def current_user(user: User = Depends(require_staff)):
+def current_user(user: User = Depends(require_authenticated_user)):
     return serialize_user(user)
 
 
@@ -412,7 +456,12 @@ def logout(
     database: Session = Depends(get_db),
 ):
     delete_session(database, session)
-    response.delete_cookie("session", path="/")
+    response.delete_cookie(
+        "session",
+        path="/",
+        samesite="none",
+        secure=os.getenv("COOKIE_SECURE", "false").lower() == "true",
+    )
 
 
 @app.get("/api/products")
@@ -585,6 +634,7 @@ def admin_orders(
 def update_order_status(
     order_id: int,
     payload: OrderStatusRequest,
+    background_tasks: BackgroundTasks,
     user: User = Depends(require_staff),
     database: Session = Depends(get_db),
 ):
@@ -607,6 +657,7 @@ def update_order_status(
     order.status = payload.status
     audit(database, user, "update_status", "order", order.id, {"status": payload.status})
     database.commit()
+    background_tasks.add_task(notify_order_status_changed, order_notification_payload(order))
     return serialize_order(order, include_private=True)
 
 
@@ -849,7 +900,7 @@ def create_user(
 
 @app.post("/api/auth/2fa/setup")
 def setup_two_factor(
-    user: User = Depends(require_staff),
+    user: User = Depends(require_authenticated_user),
     database: Session = Depends(get_db),
 ):
     secret = pyotp.random_base32()
@@ -867,7 +918,7 @@ def setup_two_factor(
 @app.post("/api/auth/2fa/enable")
 def enable_two_factor(
     payload: TwoFactorRequest,
-    user: User = Depends(require_staff),
+    user: User = Depends(require_authenticated_user),
     database: Session = Depends(get_db),
 ):
     if not user.totp_secret or not pyotp.TOTP(user.totp_secret).verify(payload.code):
@@ -901,7 +952,11 @@ def checkout_config():
 
 
 @app.post("/api/orders", status_code=201)
-def create_order(payload: OrderRequest, database: Session = Depends(get_db)):
+def create_order(
+    payload: OrderRequest,
+    background_tasks: BackgroundTasks,
+    database: Session = Depends(get_db),
+):
     if not payload.items:
         raise HTTPException(status_code=400, detail="O carrinho está vazio")
 
@@ -991,6 +1046,7 @@ def create_order(payload: OrderRequest, database: Session = Depends(get_db)):
             database.commit()
         except PaymentProviderError as error:
             payment_error = str(error)
+    background_tasks.add_task(notify_order_created, order_notification_payload(order))
     return {
         "order_id": order.code,
         "tracking_token": order.public_token,

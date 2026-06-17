@@ -55,26 +55,41 @@ API_PUBLIC_URL="https://api.sua-loja.com.br"
 COOKIE_SECURE=true
 ALLOWED_ORIGINS="https://sua-loja.com.br"
 APP_ENV=production
+REQUIRE_ADMIN_2FA=true
 ```
 
 No painel do Mercado Pago, cadastre o webhook de pagamentos em
 `https://api.sua-loja.com.br/api/payments/mercado-pago/webhook`.
 
+## E-mails transacionais
+
+O backend envia confirmação de pedido e aviso de mudança de status quando SMTP
+estiver configurado. Sem SMTP, a loja continua criando pedidos normalmente.
+
+```bash
+SMTP_HOST="smtp.seuprovedor.com"
+SMTP_PORT=587
+SMTP_USER="usuario"
+SMTP_PASSWORD="senha"
+SMTP_FROM="Loja <pedidos@sua-loja.com.br>"
+SMTP_TLS=true
+SHOP_NOTIFICATION_EMAIL="atendimento@sua-loja.com.br"
+```
+
 ## Painel administrativo
 
 Acesse `http://localhost:5173/admin`.
 
-Credenciais iniciais de desenvolvimento:
-
-- E-mail: `admin@casamamulengo.com`
-- Senha: `Mamulengo@2026`
-
-Altere essas credenciais antes do primeiro uso em produção:
+Defina as credenciais administrativas no ambiente antes do primeiro uso:
 
 ```bash
 export ADMIN_EMAIL="seu-email@dominio.com"
-export ADMIN_PASSWORD="uma-senha-forte"
+export ADMIN_PASSWORD="uma-senha-forte-com-12-ou-mais-caracteres"
 ```
+
+Em produção, mantenha `REQUIRE_ADMIN_2FA=true`. O primeiro login permite
+configurar o aplicativo autenticador; depois disso, o painel bloqueia edições
+até o 2FA estar ativo.
 
 Produtos, categorias, usuários, sessões, pedidos e itens ficam no PostgreSQL. As imagens enviadas pelo painel ficam em `backend/uploads/`; para produção, recomenda-se S3, Cloudinary ou serviço equivalente.
 

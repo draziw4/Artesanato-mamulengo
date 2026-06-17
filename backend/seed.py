@@ -22,7 +22,7 @@ SEED_PRODUCTS = [
 def seed():
     with SessionLocal() as database:
         admin_email = os.getenv("ADMIN_EMAIL", "admin@casamamulengo.com").lower()
-        admin_password = os.getenv("ADMIN_PASSWORD", "Mamulengo@2026")
+        admin_password = os.getenv("ADMIN_PASSWORD", "TroqueEstaSenha@2026")
         if not database.scalar(select(User).where(User.email == admin_email)):
             database.add(
                 User(
