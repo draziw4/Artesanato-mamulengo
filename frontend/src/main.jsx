@@ -3,7 +3,11 @@ import { createRoot } from "react-dom/client";
 import Admin from "./Admin";
 import "./styles.css";
 
-const API = `${window.location.protocol}//${window.location.hostname}:8010/api`;
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8010`;
+
+const API = `${API_BASE.replace(/\/$/, "")}/api`;
 
 const defaultSiteContent = {
   announcement: {

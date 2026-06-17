@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 
-const API = `${window.location.protocol}//${window.location.hostname}:8010/api`;
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8010`;
+
+const API = `${API_BASE.replace(/\/$/, "")}/api`;
 const emptyProduct = {
   name: "",
   category_id: "",
@@ -23,7 +27,7 @@ const request = (url, options = {}) =>
   fetch(`${API}${url}`, { credentials: "include", ...options });
 const imageUrl = (url) =>
   url?.startsWith("/uploads/")
-    ? `${window.location.protocol}//${window.location.hostname}:8010${url}`
+    ? `${API_BASE.replace(/\/$/, "")}${url}`
     : url;
 
 function Login({ onLogin }) {
