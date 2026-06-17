@@ -392,7 +392,7 @@ def login(
         "session",
         token,
         httponly=True,
-        samesite="lax",
+        samesite="none",
         secure=os.getenv("COOKIE_SECURE", "false").lower() == "true",
         max_age=43_200,
         path="/",
