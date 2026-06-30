@@ -93,6 +93,23 @@ até o 2FA estar ativo.
 
 Produtos, categorias, usuários, sessões, pedidos e itens ficam no PostgreSQL. As imagens enviadas pelo painel ficam em `backend/uploads/`; para produção, recomenda-se S3, Cloudinary ou serviço equivalente.
 
+## Armazenamento de imagens
+
+Em desenvolvimento, uploads são gravados em `backend/uploads/`. Em produção,
+configure Cloudinary para que banners, produtos e imagens do CMS não dependam do
+disco efêmero do Render:
+
+```bash
+CLOUDINARY_CLOUD_NAME="seu-cloud-name"
+CLOUDINARY_API_KEY="sua-api-key"
+CLOUDINARY_API_SECRET="seu-api-secret"
+CLOUDINARY_FOLDER="casa-mamulengo"
+```
+
+Com Cloudinary configurado, o backend continua validando JPEG, PNG e WebP,
+converte para WebP e salva a URL pública retornada pelo serviço. Sem essas
+variáveis, ele mantém o comportamento local.
+
 No painel, em **Conteúdo > Informações de contato**, configure:
 
 - o número do WhatsApp com código do país e DDD, somente números;

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
@@ -29,6 +30,20 @@ const imageUrl = (url) =>
   url?.startsWith("/uploads/")
     ? `${API_BASE.replace(/\/$/, "")}${url}`
     : url;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 22 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.04 } },
+};
 
 function Login({ onLogin }) {
   const [email, setEmail] = useState("admin@casamamulengo.com");
@@ -63,8 +78,17 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="admin-login">
-      <section className="admin-login-card">
+    <motion.div
+      className="admin-login"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.section
+        className="admin-login-card"
+        initial={{ opacity: 0, y: 28, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 220, damping: 26 }}
+      >
         <a className="brand" href="/">
           <span>Casa</span>
           <strong>Mamulengo</strong>
@@ -107,15 +131,19 @@ function Login({ onLogin }) {
             </label>
           )}
           {error && <div className="admin-alert error">{error}</div>}
-          <button className="primary full" disabled={loading}>
+          <motion.button
+            className="primary full"
+            disabled={loading}
+            whileTap={{ scale: 0.98 }}
+          >
             {loading ? "Entrando..." : "Entrar no painel"}
-          </button>
+          </motion.button>
         </form>
         <a className="admin-back" href="/">
           ← Voltar para a loja
         </a>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }
 
@@ -499,9 +527,22 @@ function ProductForm({ categories, product, onClose, onSaved }) {
   };
 
   return (
-    <div className="admin-modal">
-      <div className="admin-modal-overlay" onClick={onClose} />
-      <form className="admin-product-form" onSubmit={submit}>
+    <motion.div className="admin-modal">
+      <motion.div
+        className="admin-modal-overlay"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      />
+      <motion.form
+        className="admin-product-form"
+        onSubmit={submit}
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 16, scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 240, damping: 28 }}
+      >
         <div className="admin-form-head">
           <div>
             <span className="eyebrow">
@@ -509,9 +550,14 @@ function ProductForm({ categories, product, onClose, onSaved }) {
             </span>
             <h2>{product ? product.name : "Adicionar ao catálogo"}</h2>
           </div>
-          <button type="button" onClick={onClose}>
+          <motion.button
+            type="button"
+            onClick={onClose}
+            whileHover={{ rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+          >
             ×
-          </button>
+          </motion.button>
         </div>
         <div className="admin-image-field">
           <div className="admin-image-preview">
@@ -659,12 +705,16 @@ function ProductForm({ categories, product, onClose, onSaved }) {
           <button type="button" className="secondary-button" onClick={onClose}>
             Cancelar
           </button>
-          <button className="primary" disabled={saving || uploading}>
+          <motion.button
+            className="primary"
+            disabled={saving || uploading}
+            whileTap={{ scale: 0.98 }}
+          >
             {saving ? "Salvando..." : "Salvar produto"}
-          </button>
+          </motion.button>
         </div>
-      </form>
-    </div>
+      </motion.form>
+    </motion.div>
   );
 }
 
@@ -815,8 +865,17 @@ function AdminPanel({ user, onLogout }) {
   };
 
   return (
-    <div className="admin-shell">
-      <aside className="admin-sidebar">
+    <motion.div
+      className="admin-shell"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.aside
+        className="admin-sidebar"
+        initial={{ x: -24, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.45 }}
+      >
         <a className="brand admin-brand" href="/">
           <span>Casa</span>
           <strong>Mamulengo</strong>
@@ -831,57 +890,69 @@ function AdminPanel({ user, onLogout }) {
         <nav>
           {!(user.two_factor_required && !user.two_factor_enabled) && (
             <>
-              <button
+              <motion.button
                 className={tab === "content" ? "active" : ""}
                 onClick={() => setTab("content")}
+                whileTap={{ scale: 0.98 }}
               >
                 Conteúdo <span>CMS</span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className={tab === "products" ? "active" : ""}
                 onClick={() => setTab("products")}
+                whileTap={{ scale: 0.98 }}
               >
                 Peças <span>{products.length}</span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className={tab === "categories" ? "active" : ""}
                 onClick={() => setTab("categories")}
+                whileTap={{ scale: 0.98 }}
               >
                 Categorias <span>{categories.length}</span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className={tab === "collections" ? "active" : ""}
                 onClick={() => setTab("collections")}
+                whileTap={{ scale: 0.98 }}
               >
                 Coleções <span>{collections.length}</span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className={tab === "media" ? "active" : ""}
                 onClick={() => setTab("media")}
+                whileTap={{ scale: 0.98 }}
               >
                 Mídia <span>{media.length}</span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className={tab === "orders" ? "active" : ""}
                 onClick={() => setTab("orders")}
+                whileTap={{ scale: 0.98 }}
               >
                 Pedidos <span>{orders.length}</span>
-              </button>
+              </motion.button>
             </>
           )}
-          <button
+          <motion.button
             className={tab === "security" ? "active" : ""}
             onClick={() => setTab("security")}
+            whileTap={{ scale: 0.98 }}
           >
             Segurança <span>2FA</span>
-          </button>
+          </motion.button>
         </nav>
         <div className="admin-sidebar-foot">
           <a href="/">Ver loja pública ↗</a>
           <button onClick={logout}>Sair do painel</button>
         </div>
-      </aside>
-      <main className="admin-main">
+      </motion.aside>
+      <motion.main
+        className="admin-main"
+        variants={stagger}
+        initial="hidden"
+        animate="visible"
+      >
         {message && <div className="admin-alert">{message}</div>}
         {user.two_factor_required && !user.two_factor_enabled && (
           <div className="admin-alert error">
@@ -898,7 +969,7 @@ function AdminPanel({ user, onLogout }) {
         )}
         {tab === "products" && (
           <>
-            <header className="admin-page-head">
+            <motion.header className="admin-page-head" variants={fadeUp}>
               <div>
                 <span className="eyebrow">Catálogo</span>
                 <h1>Peças da oficina</h1>
@@ -910,26 +981,26 @@ function AdminPanel({ user, onLogout }) {
               <button className="primary" onClick={() => setEditing(null)}>
                 + Nova peça
               </button>
-            </header>
-            <div className="admin-stats">
-              <div>
+            </motion.header>
+            <motion.div className="admin-stats" variants={stagger}>
+              <motion.div variants={fadeUp}>
                 <strong>{products.length}</strong>
                 <span>peças cadastradas</span>
-              </div>
-              <div>
+              </motion.div>
+              <motion.div variants={fadeUp}>
                 <strong>
                   {products.filter((product) => product.active).length}
                 </strong>
                 <span>publicadas</span>
-              </div>
-              <div>
+              </motion.div>
+              <motion.div variants={fadeUp}>
                 <strong>
                   {products.filter((product) => product.featured).length}
                 </strong>
                 <span>em destaque</span>
-              </div>
-            </div>
-            <div className="admin-table-wrap">
+              </motion.div>
+            </motion.div>
+            <motion.div className="admin-table-wrap" variants={fadeUp}>
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -984,7 +1055,7 @@ function AdminPanel({ user, onLogout }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </motion.div>
           </>
         )}
         {tab === "categories" && (
@@ -1269,8 +1340,9 @@ function AdminPanel({ user, onLogout }) {
             onReload={load}
           />
         )}
-      </main>
-      {editing !== undefined && (
+      </motion.main>
+      <AnimatePresence>
+        {editing !== undefined && (
         <ProductForm
           categories={categories}
           product={editing}
@@ -1281,8 +1353,9 @@ function AdminPanel({ user, onLogout }) {
             load();
           }}
         />
-      )}
-    </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

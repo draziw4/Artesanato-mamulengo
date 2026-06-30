@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { AnimatePresence, motion } from "framer-motion";
 import Admin from "./Admin";
 import "./styles.css";
 
@@ -234,6 +235,31 @@ const imageUrl = (url) =>
     ? `${window.location.protocol}//${window.location.hostname}:8010${url}`
     : url;
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const softReveal = {
+  hidden: { opacity: 0, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const stagger = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.08 },
+  },
+};
+
 function WhatsAppButton({ contact }) {
   if (!contact?.whatsapp_number) return null;
   const number = String(contact.whatsapp_number).replace(/\D/g, "");
@@ -259,36 +285,54 @@ function ProductCard({ product, onAdd, onOpen }) {
   const [liked, setLiked] = useState(false);
   const soldOut = product.track_stock && product.stock <= 0;
   return (
-    <article className="product-card">
-      <div className="product-image-wrap" onClick={() => onOpen(product)}>
+    <motion.article
+      className="product-card"
+      variants={fadeUp}
+      layout
+      whileHover={{ y: -6 }}
+      transition={{ type: "spring", stiffness: 260, damping: 24 }}
+    >
+      <motion.div
+        className="product-image-wrap"
+        onClick={() => onOpen(product)}
+        whileTap={{ scale: 0.985 }}
+      >
         <img
           src={imageUrl(product.image)}
           alt={product.name}
           className="product-image"
         />
         <span className="product-tag">{product.tag}</span>
-        <button
+        <motion.button
           className={`heart ${liked ? "liked" : ""}`}
           onClick={(event) => {
             event.stopPropagation();
             setLiked(!liked);
           }}
           aria-label="Favoritar"
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.9 }}
+          animate={liked ? { scale: [1, 1.2, 1] } : { scale: 1 }}
         >
           <Icon name="heart" size={18} />
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           className="quick-add"
           disabled={soldOut}
           onClick={(event) => {
             event.stopPropagation();
             onAdd(product);
           }}
+          whileTap={{ scale: 0.98 }}
         >
           {soldOut ? "Esgotado" : "Adicionar à sacola"}
-        </button>
-      </div>
-      <button className="product-copy" onClick={() => onOpen(product)}>
+        </motion.button>
+      </motion.div>
+      <motion.button
+        className="product-copy"
+        onClick={() => onOpen(product)}
+        whileTap={{ scale: 0.99 }}
+      >
         <span className="eyebrow">{product.collection}</span>
         <h3>{product.name}</h3>
         <p>
@@ -299,8 +343,8 @@ function ProductCard({ product, onAdd, onOpen }) {
           ou {product.installments}x de{" "}
           {money(product.price / product.installments)} sem juros
         </small>
-      </button>
-    </article>
+      </motion.button>
+    </motion.article>
   );
 }
 
@@ -330,76 +374,129 @@ function Cart({ open, setOpen, items, setItems, onCheckout }) {
     );
   return (
     <>
-      <div
-        className={`overlay ${open ? "visible" : ""}`}
-        onClick={() => setOpen(false)}
-      />
-      <aside
-        className={`cart-drawer ${open ? "open" : ""}`}
-        aria-hidden={!open}
-      >
-        <div className="drawer-head">
-          <div>
-            <span className="eyebrow">Sua seleção</span>
-            <h2>Sacola</h2>
-          </div>
-          <button
-            className="icon-button"
-            onClick={() => setOpen(false)}
-            aria-label="Fechar"
-          >
-            <Icon name="close" />
-          </button>
-        </div>
-        <div className="cart-body">
-          {!items.length && (
-            <div className="empty-cart">
-              <span>✦</span>
-              <h3>Sua sacola está vazia</h3>
-              <p>
-                Escolha uma peça feita com calma para levar um pouco dessa
-                história para casa.
-              </p>
-              <button className="text-link" onClick={() => setOpen(false)}>
-                Conhecer as peças <Icon name="arrow" size={16} />
-              </button>
-            </div>
-          )}
-          {items.map((item) => (
-            <div className="cart-item" key={item.id}>
-              <img src={imageUrl(item.image)} alt="" />
-              <div>
-                <span className="eyebrow">{item.material}</span>
-                <h3>{item.name}</h3>
-                <strong>{money(item.price)}</strong>
-                <div className="quantity">
-                  <button onClick={() => change(item.id, -1)}>
-                    <Icon name="minus" size={14} />
-                  </button>
-                  <span>{item.quantity}</span>
-                  <button onClick={() => change(item.id, 1)}>
-                    <Icon name="plus" size={14} />
-                  </button>
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              className="overlay visible"
+              onClick={() => setOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            />
+            <motion.aside
+              className="cart-drawer open"
+              aria-hidden={!open}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 260, damping: 32 }}
+            >
+              <div className="drawer-head">
+                <div>
+                  <span className="eyebrow">Sua seleção</span>
+                  <h2>Sacola</h2>
                 </div>
+                <motion.button
+                  className="icon-button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Fechar"
+                  whileHover={{ rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <Icon name="close" />
+                </motion.button>
               </div>
-            </div>
-          ))}
-        </div>
-        {!!items.length && (
-          <div className="cart-footer">
-            <div className="subtotal">
-              <span>Subtotal</span>
-              <strong>{money(subtotal)}</strong>
-            </div>
-            <p>
-              Frete calculado no próximo passo. Envio gratuito acima de R$ 450.
-            </p>
-            <button className="primary full" onClick={onCheckout}>
-              Ir para o checkout <Icon name="arrow" />
-            </button>
-          </div>
+              <div className="cart-body">
+                {!items.length && (
+                  <motion.div
+                    className="empty-cart"
+                    variants={softReveal}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    <span>✦</span>
+                    <h3>Sua sacola está vazia</h3>
+                    <p>
+                      Escolha uma peça feita com calma para levar um pouco dessa
+                      história para casa.
+                    </p>
+                    <button className="text-link" onClick={() => setOpen(false)}>
+                      Conhecer as peças <Icon name="arrow" size={16} />
+                    </button>
+                  </motion.div>
+                )}
+                <AnimatePresence initial={false}>
+                  {items.map((item) => (
+                    <motion.div
+                      className="cart-item"
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0, x: 35 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 35 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <img src={imageUrl(item.image)} alt="" />
+                      <div>
+                        <span className="eyebrow">{item.material}</span>
+                        <h3>{item.name}</h3>
+                        <strong>{money(item.price)}</strong>
+                        <div className="quantity">
+                          <motion.button
+                            onClick={() => change(item.id, -1)}
+                            whileTap={{ scale: 0.86 }}
+                          >
+                            <Icon name="minus" size={14} />
+                          </motion.button>
+                          <motion.span
+                            key={item.quantity}
+                            initial={{ y: -8, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                          >
+                            {item.quantity}
+                          </motion.span>
+                          <motion.button
+                            onClick={() => change(item.id, 1)}
+                            whileTap={{ scale: 0.86 }}
+                          >
+                            <Icon name="plus" size={14} />
+                          </motion.button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+              {!!items.length && (
+                <motion.div
+                  className="cart-footer"
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08 }}
+                >
+                  <div className="subtotal">
+                    <span>Subtotal</span>
+                    <strong>{money(subtotal)}</strong>
+                  </div>
+                  <p>
+                    Frete calculado no próximo passo. Envio gratuito acima de R$
+                    450.
+                  </p>
+                  <motion.button
+                    className="primary full"
+                    onClick={onCheckout}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Ir para o checkout <Icon name="arrow" />
+                  </motion.button>
+                </motion.div>
+              )}
+            </motion.aside>
+          </>
         )}
-      </aside>
+      </AnimatePresence>
     </>
   );
 }
@@ -508,23 +605,61 @@ function Checkout({ items, siteContent, onClose, onSuccess }) {
   };
 
   return (
-    <div className="checkout">
-      <div className="checkout-top">
+    <motion.div
+      className="checkout"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35 }}
+    >
+      <motion.div
+        className="checkout-top"
+        initial={{ y: -18, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
         <a className="brand small" href="#">
           <span>Casa</span>
           <strong>Mamulengo</strong>
         </a>
-        <button className="icon-button" onClick={onClose}>
+        <motion.button
+          className="icon-button"
+          onClick={onClose}
+          whileHover={{ rotate: 90 }}
+          whileTap={{ scale: 0.9 }}
+        >
           <Icon name="close" />
-        </button>
-      </div>
-      <div className="checkout-progress">
-        <span className={step >= 1 ? "active" : ""}>1. Entrega</span>
+        </motion.button>
+      </motion.div>
+      <motion.div
+        className="checkout-progress"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+      >
+        <motion.span
+          className={step >= 1 ? "active" : ""}
+          animate={step === 1 ? { scale: 1.04 } : { scale: 1 }}
+        >
+          1. Entrega
+        </motion.span>
         <i />
-        <span className={step >= 2 ? "active" : ""}>2. Pagamento</span>
-      </div>
-      <main className="checkout-grid">
-        <form className="checkout-form" onSubmit={submit}>
+        <motion.span
+          className={step >= 2 ? "active" : ""}
+          animate={step === 2 ? { scale: 1.04 } : { scale: 1 }}
+        >
+          2. Pagamento
+        </motion.span>
+      </motion.div>
+      <motion.main
+        className="checkout-grid"
+        variants={stagger}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.form
+          className="checkout-form"
+          onSubmit={submit}
+          variants={fadeUp}
+        >
           <span className="eyebrow">Finalizar encomenda</span>
           <h1>{step === 1 ? "Para onde enviamos?" : "Como prefere pagar?"}</h1>
           {step === 1 ? (
@@ -670,14 +805,15 @@ function Checkout({ items, siteContent, onClose, onSuccess }) {
                   Preencha os dados de entrega para continuar.
                 </p>
               )}
-              <button
+              <motion.button
                 className="primary full"
                 type="button"
                 disabled={!deliveryComplete}
                 onClick={() => setStep(2)}
+                whileTap={{ scale: 0.98 }}
               >
                 Continuar para pagamento <Icon name="arrow" />
-              </button>
+              </motion.button>
             </>
           ) : (
             <>
@@ -700,25 +836,31 @@ function Checkout({ items, siteContent, onClose, onSuccess }) {
                 </div>
               </div>
               {error && <div className="checkout-error">{error}</div>}
-              <button className="primary full" type="submit" disabled={loading}>
+              <motion.button
+                className="primary full"
+                type="submit"
+                disabled={loading}
+                whileTap={{ scale: 0.98 }}
+              >
                 {loading
                   ? "Preparando pedido..."
                   : `Ir para o pagamento · ${money(subtotal + shippingPrice)}`}
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className="back-link"
                 type="button"
                 onClick={() => setStep(1)}
+                whileTap={{ scale: 0.96 }}
               >
                 ← Voltar para entrega
-              </button>
+              </motion.button>
             </>
           )}
-        </form>
-        <aside className="order-summary">
+        </motion.form>
+        <motion.aside className="order-summary" variants={fadeUp}>
           <h2>Resumo do pedido</h2>
           {items.map((item) => (
-            <div className="summary-item" key={item.id}>
+            <motion.div className="summary-item" key={item.id} layout>
               <div>
                 <img src={imageUrl(item.image)} />
                 <span>{item.quantity}</span>
@@ -728,7 +870,7 @@ function Checkout({ items, siteContent, onClose, onSuccess }) {
                 <small>{item.material}</small>
               </p>
               <strong>{money(item.price * item.quantity)}</strong>
-            </div>
+            </motion.div>
           ))}
           <div className="summary-lines">
             <p>
@@ -752,9 +894,9 @@ function Checkout({ items, siteContent, onClose, onSuccess }) {
               <b>{money(subtotal + shippingPrice)}</b>
             </p>
           </div>
-        </aside>
-      </main>
-    </div>
+        </motion.aside>
+      </motion.main>
+    </motion.div>
   );
 }
 
@@ -876,30 +1018,76 @@ function App() {
     );
 
   return (
-    <div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {siteContent.announcement?.enabled && (
-        <div className="announcement">
+        <motion.div
+          className="announcement"
+          initial={{ y: -34 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        >
           {siteContent.announcement.text} <span>✦</span>{" "}
           {siteContent.announcement.secondary_text}
-        </div>
+        </motion.div>
       )}
-      <header className="site-header">
-        <button
+      <motion.header
+        className="site-header"
+        initial={{ y: -18, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.08 }}
+      >
+        <motion.button
           className="mobile-menu"
           onClick={() => setMobileMenu(!mobileMenu)}
+          aria-label={mobileMenu ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={mobileMenu}
+          whileTap={{ scale: 0.9 }}
+          animate={mobileMenu ? { rotate: 90 } : { rotate: 0 }}
         >
-          <Icon name="menu" />
-        </button>
+          <Icon name={mobileMenu ? "close" : "menu"} />
+        </motion.button>
         <a className="brand" href="#">
           <span>Casa</span>
           <strong>Mamulengo</strong>
         </a>
-        <nav className={mobileMenu ? "mobile-open" : ""}>
+        <nav className="desktop-nav">
           <a href="#pecas">Peças</a>
           <a href="#colecoes">Coleções</a>
           <a href="#historia">Nossa história</a>
           <a href="#oficina">A oficina</a>
         </nav>
+        <AnimatePresence>
+          {mobileMenu && (
+            <motion.nav
+              className="mobile-nav"
+              initial={{ opacity: 0, y: -18, scaleY: 0.96 }}
+              animate={{ opacity: 1, y: 0, scaleY: 1 }}
+              exit={{ opacity: 0, y: -14, scaleY: 0.98 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {[
+                ["#pecas", "Peças"],
+                ["#colecoes", "Coleções"],
+                ["#historia", "Nossa história"],
+                ["#oficina", "A oficina"],
+              ].map(([href, label], index) => (
+                <motion.a
+                  href={href}
+                  key={href}
+                  onClick={() => setMobileMenu(false)}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ delay: index * 0.04 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  {label}
+                </motion.a>
+              ))}
+            </motion.nav>
+          )}
+        </AnimatePresence>
         <div className="header-actions">
           <label className="search">
             <Icon name="search" size={18} />
@@ -909,67 +1097,117 @@ function App() {
               placeholder="Buscar peças"
             />
           </label>
-          <button className="bag-button" onClick={() => setCartOpen(true)}>
+          <motion.button
+            className="bag-button"
+            onClick={() => setCartOpen(true)}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.92 }}
+          >
             <Icon name="bag" />
-            <span>{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
-          </button>
+            <motion.span
+              key={cart.reduce((sum, item) => sum + item.quantity, 0)}
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+            >
+              {cart.reduce((sum, item) => sum + item.quantity, 0)}
+            </motion.span>
+          </motion.button>
         </div>
-      </header>
+      </motion.header>
 
       <main>
-        <section className="hero">
-          <img
+        <motion.section
+          className="hero"
+          variants={softReveal}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.img
             src={imageUrl(siteContent.hero?.image)}
             alt="Oficina de artesanato em madeira"
+            initial={{ scale: 1.06 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
           />
           <div className="hero-shade" />
-          <div className="hero-content">
-            <span className="eyebrow light">{siteContent.hero?.eyebrow}</span>
-            <h1>
+          <motion.div
+            className="hero-content"
+            variants={stagger}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.span className="eyebrow light" variants={fadeUp}>
+              {siteContent.hero?.eyebrow}
+            </motion.span>
+            <motion.h1 variants={fadeUp}>
               {siteContent.hero?.title}
               <br />
               <em>{siteContent.hero?.title_emphasis}</em>
-            </h1>
-            <p>{siteContent.hero?.subtitle}</p>
-            <a className="primary cream" href={siteContent.hero?.button_url}>
+            </motion.h1>
+            <motion.p variants={fadeUp}>{siteContent.hero?.subtitle}</motion.p>
+            <motion.a
+              className="primary cream"
+              href={siteContent.hero?.button_url}
+              variants={fadeUp}
+              whileHover={{ y: -3 }}
+              whileTap={{ scale: 0.98 }}
+            >
               {siteContent.hero?.button_text} <Icon name="arrow" />
-            </a>
-          </div>
-          <div className="hero-note">
+            </motion.a>
+          </motion.div>
+          <motion.div
+            className="hero-note"
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.55 }}
+          >
             <span>01</span>
             <p>
               Pequenas séries
               <br />e peças únicas
             </p>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        <section className="values">
-          <div>
+        <motion.section
+          className="values"
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.35 }}
+        >
+          <motion.div variants={fadeUp}>
             <Icon name="truck" />
             <p>
               <strong>Enviamos com cuidado</strong>
               <span>Embalagem protegida e rastreada</span>
             </p>
-          </div>
-          <div>
+          </motion.div>
+          <motion.div variants={fadeUp}>
             <Icon name="card" />
             <p>
               <strong>Pagamento tranquilo</strong>
               <span>PIX, boleto ou até 5x sem juros</span>
             </p>
-          </div>
-          <div>
+          </motion.div>
+          <motion.div variants={fadeUp}>
             <Icon name="shield" />
             <p>
               <strong>Feito para durar</strong>
               <span>Madeira tratada e origem responsável</span>
             </p>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        <section className="catalog section" id="pecas">
-          <div className="section-heading">
+        <motion.section
+          className="catalog section"
+          id="pecas"
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.18 }}
+        >
+          <motion.div className="section-heading" variants={fadeUp}>
             <div>
               <span className="eyebrow">{siteContent.catalog?.eyebrow}</span>
               <h2>
@@ -978,23 +1216,30 @@ function App() {
               </h2>
             </div>
             <p>{siteContent.catalog?.subtitle}</p>
-          </div>
-          <div className="filter-row">
+          </motion.div>
+          <motion.div className="filter-row" variants={fadeUp}>
             <div className="categories">
               {categories.map((item) => (
-                <button
+                <motion.button
                   className={category === item ? "active" : ""}
                   onClick={() => setCategory(item)}
                   key={item}
+                  whileTap={{ scale: 0.94 }}
                 >
                   {item}
-                </button>
+                </motion.button>
               ))}
             </div>
             <span>{filtered.length} peças</span>
-          </div>
+          </motion.div>
           {filtered.length ? (
-            <div className="product-grid">
+            <motion.div
+              className="product-grid"
+              variants={stagger}
+              initial="hidden"
+              animate="visible"
+              layout
+            >
               {filtered.map((product) => (
                 <ProductCard
                   product={product}
@@ -1003,9 +1248,15 @@ function App() {
                   key={product.id}
                 />
               ))}
-            </div>
+            </motion.div>
           ) : (
-            <div className="catalog-empty" role="status">
+            <motion.div
+              className="catalog-empty"
+              role="status"
+              variants={softReveal}
+              initial="hidden"
+              animate="visible"
+            >
               <span>✦</span>
               <h3>
                 {query
@@ -1026,13 +1277,20 @@ function App() {
               >
                 Ver todas as peças <Icon name="arrow" />
               </button>
-            </div>
+            </motion.div>
           )}
-        </section>
+        </motion.section>
 
-        <section className="collections section" id="colecoes">
-          <div
+        <motion.section
+          className="collections section"
+          id="colecoes"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.28 }}
+        >
+          <motion.div
             className="collection-main"
+            variants={softReveal}
             style={{
               backgroundImage: `linear-gradient(rgba(42,24,14,.58),rgba(42,24,14,.58)), url("${imageUrl(siteContent.featured_collection?.image)}")`,
             }}
@@ -1056,28 +1314,50 @@ function App() {
                 <Icon name="arrow" />
               </button>
             </div>
-          </div>
-          <div className="collection-quote">
-            <span>“</span>
+          </motion.div>
+          <motion.div className="collection-quote" variants={fadeUp}>
+            <motion.span
+              initial={{ rotate: -8, scale: 0.8 }}
+              whileInView={{ rotate: 0, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", stiffness: 180, damping: 18 }}
+            >
+              “
+            </motion.span>
             <blockquote>{siteContent.featured_collection?.quote}</blockquote>
             <p>— {siteContent.featured_collection?.quote_author}</p>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        <section className="story section" id="historia">
-          <div className="story-image">
-            <img
+        <motion.section
+          className="story section"
+          id="historia"
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.25 }}
+        >
+          <motion.div className="story-image" variants={softReveal}>
+            <motion.img
               src={imageUrl(siteContent.institutional?.image)}
               alt="Detalhe do trabalho artesanal"
+              whileHover={{ scale: 1.025 }}
+              transition={{ duration: 0.45 }}
             />
-            <div className="stamp">
+            <motion.div
+              className="stamp"
+              initial={{ rotate: -14, scale: 0.75, opacity: 0 }}
+              whileInView={{ rotate: 8, scale: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", stiffness: 180, damping: 14 }}
+            >
               feito
               <br />à mão
               <br />
               <span>✦</span>
-            </div>
-          </div>
-          <div className="story-copy">
+            </motion.div>
+          </motion.div>
+          <motion.div className="story-copy" variants={fadeUp}>
             <span className="eyebrow">
               {siteContent.institutional?.eyebrow}
             </span>
@@ -1091,22 +1371,34 @@ function App() {
             <a className="text-link" href="#oficina">
               Entrar na oficina <Icon name="arrow" />
             </a>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        <section className="newsletter">
+        <motion.section
+          className="newsletter"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.35 }}
+        >
           <span className="eyebrow">Cartas da oficina</span>
           <h2>Novidades feitas sem pressa.</h2>
           <p>Receba histórias, lançamentos e os bastidores de cada coleção.</p>
           <form onSubmit={(e) => e.preventDefault()}>
             <input type="email" placeholder="Seu melhor e-mail" required />
-            <button>
+            <motion.button whileTap={{ scale: 0.96 }}>
               Quero receber <Icon name="arrow" />
-            </button>
+            </motion.button>
           </form>
-        </section>
+        </motion.section>
       </main>
-      <footer id="oficina">
+      <motion.footer
+        id="oficina"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.55 }}
+      >
         <a className="brand footer-brand" href="#">
           <span>Casa</span>
           <strong>Mamulengo</strong>
@@ -1138,7 +1430,7 @@ function App() {
           <a href="/trocas-e-devolucoes">Trocas e devoluções</a> ·{" "}
           <a href="/admin">Administrar</a>
         </small>
-      </footer>
+      </motion.footer>
       <WhatsAppButton contact={siteContent.contact} />
 
       <Cart
@@ -1151,16 +1443,31 @@ function App() {
           setCheckout(true);
         }}
       />
-      {selected && (
-        <div className="modal-shell">
-          <div className="overlay visible" onClick={() => setSelected(null)} />
-          <div className="product-modal">
-            <button
+      <AnimatePresence>
+        {selected && (
+          <motion.div className="modal-shell">
+            <motion.div
+              className="overlay visible"
+              onClick={() => setSelected(null)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              className="product-modal"
+              initial={{ opacity: 0, y: 32, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
+            >
+              <motion.button
               className="icon-button modal-close"
               onClick={() => setSelected(null)}
+              whileHover={{ rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
             >
               <Icon name="close" />
-            </button>
+            </motion.button>
             <img src={imageUrl(selected.image)} alt={selected.name} />
             <div>
               <span className="eyebrow">{selected.collection}</span>
@@ -1185,18 +1492,41 @@ function App() {
               </dl>
               <strong className="modal-price">{money(selected.price)}</strong>
               <small>em até {selected.installments}x sem juros</small>
-              <button className="primary full" onClick={() => add(selected)}>
+              <motion.button
+                className="primary full"
+                onClick={() => add(selected)}
+                whileTap={{ scale: 0.98 }}
+              >
                 Adicionar à sacola <Icon name="bag" />
-              </button>
+              </motion.button>
             </div>
-          </div>
-        </div>
-      )}
-      {orderId && (
-        <div className="success-modal">
-          <div className="overlay visible" />
-          <div>
-            <span className="success-mark">✓</span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {orderId && (
+          <motion.div className="success-modal">
+            <motion.div
+              className="overlay visible"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
+            >
+              <motion.span
+                className="success-mark"
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 240, damping: 14 }}
+              >
+                ✓
+              </motion.span>
             <span className="eyebrow">Pedido recebido</span>
             <h2>Já estamos cuidando de tudo.</h2>
             <p>
@@ -1219,13 +1549,18 @@ function App() {
                 O pedido ficou reservado, sem cobrança.
               </p>
             )}
-            <button className="primary" onClick={() => setOrderId(null)}>
+            <motion.button
+              className="primary"
+              onClick={() => setOrderId(null)}
+              whileTap={{ scale: 0.98 }}
+            >
               Voltar para a loja
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+            </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

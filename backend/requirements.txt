@@ -8,3 +8,4 @@ psycopg[binary]==3.2.9
 Pillow==11.2.1
 pillow-avif-plugin==1.5.5
 pyotp==2.9.0
+cloudinary==1.41.0

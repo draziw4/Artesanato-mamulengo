@@ -14,3 +14,52 @@
 @media(max-width:580px){.fulfillment-options{grid-template-columns:1fr}.whatsapp-float{right:16px;bottom:16px}.whatsapp-float span{display:none}}
 .payment-provider{display:flex;align-items:center;gap:18px;background:var(--cream);border:1px solid var(--line);padding:24px;margin-bottom:18px}.payment-provider p{font:15px "DM Serif Display";margin:4px 0}.payment-provider small{color:#74685f}.checkout-error,.payment-warning{background:#f4dcd4;color:#7b2d20;padding:14px;font-size:11px;line-height:1.5;margin-bottom:16px}.order-status-select{border:1px solid var(--line);background:#fffdf8;padding:8px;font-size:10px}.quick-add:disabled{cursor:not-allowed;opacity:.78}
 .legal-page{min-height:100vh;background:var(--paper)}.legal-content{max-width:860px;margin:0 auto;padding:80px 24px}.legal-content h1{font:64px/1 "DM Serif Display";margin:12px 0 20px}.legal-content>p,.legal-content section p{font:17px/1.75 "DM Serif Display";color:#70645b}.legal-content section{border-top:1px solid var(--line);padding:28px 0}.legal-content h2{font:30px "DM Serif Display";margin:0 0 8px}.legal-content .eyebrow{color:var(--wine)}
+
+.mobile-nav{display:none}
+@media(max-width:900px){
+  .site-header{position:sticky;top:0;grid-template-columns:48px minmax(0,1fr) 48px;box-shadow:0 10px 28px rgba(48,37,30,.08)}
+  .site-header .desktop-nav{display:none}
+  .mobile-menu{width:44px;height:44px;border-radius:50%;background:rgba(115,52,36,.08);color:var(--wine)}
+  .site-header>.brand{max-width:150px;align-items:center}
+  .site-header>.brand span{font-size:15px}
+  .site-header>.brand strong{font-size:21px}
+  .header-actions{gap:0}
+  .bag-button{width:44px;height:44px;border-radius:50%;background:rgba(48,37,30,.04)}
+  .site-header .mobile-nav{position:absolute;top:calc(100% + 1px);left:12px;right:12px;display:flex;flex-direction:column;gap:0;background:rgba(248,243,233,.98);border:1px solid var(--line);box-shadow:0 24px 55px rgba(48,37,30,.18);padding:10px;transform-origin:top;z-index:30}
+  .site-header .mobile-nav a{display:flex;align-items:center;gap:14px;padding:17px 14px;text-decoration:none;font:24px/1 "DM Serif Display";border-bottom:1px solid var(--line)}
+  .site-header .mobile-nav a:after{display:none}
+  .site-header .mobile-nav a:last-child{border-bottom:0}
+  .site-header .mobile-nav a span{font:10px "DM Sans";letter-spacing:.14em;color:var(--wine)}
+  .hero{height:min(680px,calc(100svh - 106px))}
+  .hero-content{max-width:520px}
+  .section-heading>p{font-size:16px}
+  .categories{gap:18px;padding-bottom:1px}
+  .cart-drawer{width:100%;max-width:480px}
+}
+@media(max-width:580px){
+  .announcement{min-height:34px;height:auto;padding:8px 12px;line-height:1.35}
+  .site-header{height:68px;padding:0 14px;grid-template-columns:44px minmax(0,1fr) 44px}
+  .site-header .mobile-nav{left:10px;right:10px;padding:8px}
+  .site-header .mobile-nav a{font-size:22px;padding:16px 12px}
+  .hero{height:min(620px,calc(100svh - 102px))}
+  .hero-content{top:50%;left:22px;right:22px}
+  .hero h1{font-size:clamp(42px,13vw,50px)}
+  .hero p{font-size:15px;line-height:1.55;margin-bottom:28px}
+  .primary{width:100%;min-height:50px;padding:15px 18px;text-align:center}
+  .values{padding:8px 18px}
+  .section{padding:64px 18px}
+  .filter-row{margin:38px 0 24px}
+  .categories{margin:0 -18px;padding:0 18px 1px}
+  .product-image-wrap{height:auto;aspect-ratio:4/5}
+  .collection-main{min-height:500px;padding:28px 22px}
+  .collection-main h2{font-size:48px}
+  .collection-quote blockquote{font-size:27px}
+  .story-image{height:auto;aspect-ratio:4/5}
+  .cart-body{padding:10px 22px}
+  .drawer-head,.cart-footer{padding:22px}
+  .cart-item{grid-template-columns:88px 1fr;gap:14px}
+  .cart-item img{width:88px;height:104px}
+  .product-modal{width:100vw;max-height:100svh}
+  .product-modal>img{height:290px;min-height:290px}
+  .success-modal>div:last-child{width:calc(100% - 28px);padding:42px 24px}
+}
