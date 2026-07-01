@@ -15,6 +15,16 @@
 .payment-provider{display:flex;align-items:center;gap:18px;background:var(--cream);border:1px solid var(--line);padding:24px;margin-bottom:18px}.payment-provider p{font:15px "DM Serif Display";margin:4px 0}.payment-provider small{color:#74685f}.checkout-error,.payment-warning{background:#f4dcd4;color:#7b2d20;padding:14px;font-size:11px;line-height:1.5;margin-bottom:16px}.order-status-select{border:1px solid var(--line);background:#fffdf8;padding:8px;font-size:10px}.quick-add:disabled{cursor:not-allowed;opacity:.78}
 .legal-page{min-height:100vh;background:var(--paper)}.legal-content{max-width:860px;margin:0 auto;padding:80px 24px}.legal-content h1{font:64px/1 "DM Serif Display";margin:12px 0 20px}.legal-content>p,.legal-content section p{font:17px/1.75 "DM Serif Display";color:#70645b}.legal-content section{border-top:1px solid var(--line);padding:28px 0}.legal-content h2{font:30px "DM Serif Display";margin:0 0 8px}.legal-content .eyebrow{color:var(--wine)}
 
+.cms-image-actions{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:10px;align-items:end;margin-top:10px}
+.cms-image-actions .secondary-button{height:42px;display:inline-flex;align-items:center;justify-content:center}
+.cms-image-actions input{margin-top:0}
+.cms-media-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
+.cms-media-picker button{border:1px solid var(--line);background:#fffdf8;padding:0;min-width:0;position:relative;aspect-ratio:1;overflow:hidden}
+.cms-media-picker img{width:100%;height:100%;object-fit:cover;display:block}
+.cms-media-picker span{position:absolute;left:0;right:0;bottom:0;background:rgba(48,37,30,.76);color:white;font-size:8px;text-transform:uppercase;letter-spacing:.08em;padding:6px 4px;opacity:0;transition:.2s}
+.cms-media-picker button:hover span{opacity:1}
+.media-copy{border:0;background:transparent;color:var(--wine);padding:8px 0 0;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.08em;text-decoration:underline}
+
 .mobile-nav{display:none}
 @media(max-width:900px){
   .site-header{position:sticky;top:0;grid-template-columns:48px minmax(0,1fr) 48px;box-shadow:0 10px 28px rgba(48,37,30,.08)}
@@ -62,4 +72,7 @@
   .product-modal{width:100vw;max-height:100svh}
   .product-modal>img{height:290px;min-height:290px}
   .success-modal>div:last-child{width:calc(100% - 28px);padding:42px 24px}
+  .cms-image-actions{grid-template-columns:1fr}
+  .cms-media-picker{grid-template-columns:repeat(3,1fr)}
+  .cms-media-picker span{opacity:1}
 }

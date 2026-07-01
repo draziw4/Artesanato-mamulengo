@@ -157,7 +157,7 @@ const CONTENT_LABELS = {
   seo: "SEO básico",
 };
 
-function ContentEditor({ content, revisions, onReload }) {
+function ContentEditor({ content, revisions, media = [], onReload }) {
   const [data, setData] = useState(content.data);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -167,30 +167,48 @@ function ContentEditor({ content, revisions, onReload }) {
       ...current,
       [section]: { ...current[section], [field]: value },
     }));
-  const upload = async (section, field, file) => {
-    if (!file) return;
-    const body = new FormData();
-    body.append("image", file);
-    const response = await request("/admin/upload", { method: "POST", body });
-    const result = await response.json();
-    if (!response.ok) return setMessage(result.detail);
-    update(section, field, result.url);
-  };
-  const save = async () => {
+  const saveDraft = async (nextData, successMessage) => {
     setSaving(true);
     const response = await request("/admin/content", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data }),
+      body: JSON.stringify({ data: nextData }),
     });
     const result = await response.json();
-    setMessage(
-      response.ok
-        ? "Rascunho salvo. A loja pública ainda não foi alterada."
-        : result.detail,
-    );
     setSaving(false);
-    if (response.ok) onReload();
+    if (!response.ok) {
+      setMessage(result.detail || "Não foi possível salvar o rascunho.");
+      return false;
+    }
+    setMessage(successMessage || "Rascunho salvo. Publique para alterar a loja.");
+    onReload();
+    return true;
+  };
+  const applyImage = async (section, field, url, successMessage) => {
+    const nextData = {
+      ...data,
+      [section]: { ...data[section], [field]: url },
+    };
+    setData(nextData);
+    await saveDraft(nextData, successMessage);
+  };
+  const upload = async (section, field, file) => {
+    if (!file) return;
+    const body = new FormData();
+    body.append("image", file);
+    setMessage("Enviando imagem...");
+    const response = await request("/admin/upload", { method: "POST", body });
+    const result = await response.json();
+    if (!response.ok) return setMessage(result.detail);
+    await applyImage(
+      section,
+      field,
+      result.url,
+      "Imagem enviada e aplicada ao rascunho. Publique para alterar a loja.",
+    );
+  };
+  const save = async () => {
+    await saveDraft(data, "Rascunho salvo. A loja pública ainda não foi alterada.");
   };
   const publish = async () => {
     const response = await request("/admin/content/publish", {
@@ -254,13 +272,49 @@ function ContentEditor({ content, revisions, onReload }) {
                           <div className="cms-image">
                             {value && <img src={imageUrl(value)} alt="" />}
                           </div>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            onChange={(event) =>
-                              upload(section, field, event.target.files?.[0])
-                            }
-                          />
+                          <div className="cms-image-actions">
+                            <label className="secondary-button">
+                              Enviar e aplicar
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={(event) =>
+                                  upload(section, field, event.target.files?.[0])
+                                }
+                              />
+                            </label>
+                            <input
+                              value={value || ""}
+                              onChange={(event) =>
+                                update(section, field, event.target.value)
+                              }
+                              placeholder="/uploads/imagem.webp"
+                            />
+                          </div>
+                          {!!media.length && (
+                            <div className="cms-media-picker">
+                              {media.slice(0, 6).map((asset) => (
+                                <button
+                                  type="button"
+                                  key={asset.id}
+                                  onClick={() =>
+                                    applyImage(
+                                      section,
+                                      field,
+                                      asset.url,
+                                      "Imagem da biblioteca aplicada ao rascunho. Publique para alterar a loja.",
+                                    )
+                                  }
+                                >
+                                  <img
+                                    src={imageUrl(asset.url)}
+                                    alt={asset.original_name}
+                                  />
+                                  <span>Usar</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </>
                       ) : typeof value === "boolean" ? (
                         <input
@@ -848,6 +902,19 @@ function AdminPanel({ user, onLogout }) {
     load();
   };
 
+  const uploadCollectionImage = async (file) => {
+    if (!file) return;
+    setMessage("Enviando imagem da coleção...");
+    const body = new FormData();
+    body.append("image", file);
+    const response = await request("/admin/upload", { method: "POST", body });
+    const data = await response.json();
+    if (!response.ok) return setMessage(data.detail);
+    setCollectionForm((current) => ({ ...current, image: data.url }));
+    setMessage("Imagem enviada. Salve a coleção para aplicar.");
+    load();
+  };
+
   const logout = async () => {
     await request("/auth/logout", { method: "POST" });
     onLogout();
@@ -862,6 +929,11 @@ function AdminPanel({ user, onLogout }) {
     const data = await response.json();
     setMessage(response.ok ? "Status do pedido atualizado." : data.detail);
     if (response.ok) load();
+  };
+
+  const copyMediaUrl = async (url) => {
+    await navigator.clipboard?.writeText(url);
+    setMessage("URL da imagem copiada. Para trocar banners, use a aba Conteúdo.");
   };
 
   return (
@@ -964,6 +1036,7 @@ function AdminPanel({ user, onLogout }) {
           <ContentEditor
             content={content}
             revisions={revisions}
+            media={media}
             onReload={load}
           />
         )}
@@ -1200,17 +1273,53 @@ function AdminPanel({ user, onLogout }) {
                   />
                 </label>
                 <label>
-                  Imagem (URL)
-                  <input
-                    value={collectionForm.image}
-                    onChange={(event) =>
-                      setCollectionForm({
-                        ...collectionForm,
-                        image: event.target.value,
-                      })
-                    }
-                    placeholder="/uploads/..."
-                  />
+                  Imagem da coleção
+                  <div className="cms-image">
+                    {collectionForm.image && (
+                      <img src={imageUrl(collectionForm.image)} alt="" />
+                    )}
+                  </div>
+                  <div className="cms-image-actions">
+                    <label className="secondary-button">
+                      Enviar imagem
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(event) =>
+                          uploadCollectionImage(event.target.files?.[0])
+                        }
+                      />
+                    </label>
+                    <input
+                      value={collectionForm.image}
+                      onChange={(event) =>
+                        setCollectionForm({
+                          ...collectionForm,
+                          image: event.target.value,
+                        })
+                      }
+                      placeholder="/uploads/..."
+                    />
+                  </div>
+                  {!!media.length && (
+                    <div className="cms-media-picker">
+                      {media.slice(0, 6).map((asset) => (
+                        <button
+                          type="button"
+                          key={asset.id}
+                          onClick={() =>
+                            setCollectionForm({
+                              ...collectionForm,
+                              image: asset.url,
+                            })
+                          }
+                        >
+                          <img src={imageUrl(asset.url)} alt={asset.original_name} />
+                          <span>Usar</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </label>
                 <label className="wide">
                   Descrição
@@ -1311,8 +1420,9 @@ function AdminPanel({ user, onLogout }) {
                 <span className="eyebrow">Biblioteca</span>
                 <h1>Imagens processadas</h1>
                 <p>
-                  Arquivos validados e convertidos automaticamente para formatos
-                  modernos.
+                  A biblioteca guarda arquivos enviados. Para alterar banners e
+                  fotos da página inicial, escolha a imagem na aba Conteúdo e
+                  publique a alteração.
                 </p>
               </div>
             </header>
@@ -1326,6 +1436,13 @@ function AdminPanel({ user, onLogout }) {
                       {asset.width} × {asset.height} · WebP
                       {asset.avif_url ? " + AVIF" : ""}
                     </small>
+                    <button
+                      type="button"
+                      className="media-copy"
+                      onClick={() => copyMediaUrl(asset.url)}
+                    >
+                      Copiar URL
+                    </button>
                   </p>
                 </article>
               ))}
